@@ -140,6 +140,21 @@ def load(bx, tg, n_syms):
             continue
         sp = {r[0] + DAY: r[4] for r in sk}
         px = {r[0] + DAY: (sp[r[0] + DAY], r[4]) for r in pk if r[0] + DAY in sp}
+        if len(px) < 60:
+            # las velas diarias de spot y perp no cierran a la misma hora (zona horaria distinta):
+            # se toma el spot de velas de 1h justo a la hora de cierre del perp, para medir la prima sin desfase
+            try:
+                sh = bx.spot_klines_history(s, "1h", C.RESEARCH_DAYS * 24)
+            except BingXError:
+                sh = []
+            sp = {r[0] + 3_600_000: r[4] for r in sh}
+            px = {r[0] + DAY: (sp[r[0] + DAY], r[4]) for r in pk if r[0] + DAY in sp}
+            if s == syms[0]:
+                log.info("carry: alineado con spot 1h (%d días comunes)", len(px))
+        if len(px) < 60:
+            log.warning("carry %s: spot y perp no coinciden en el tiempo (spot %s · perp %s)", s,
+                        sk[-1][0] % DAY if sk else None, pk[-1][0] % DAY)
+            continue
         data[s] = {"px": px, "fund": sorted(fund)}
     return data, syms
 
@@ -148,7 +163,8 @@ def research(bx, tg):
     t0 = time.time()
     data, syms = load(bx, tg, max(C.CR_UNIVERSE, 30))
     if not data:
-        return "🔬 <b>IDEA 4 · CARRY</b>: sin datos (¿la API spot de BingX respondió?)"
+        return ("🔬 <b>IDEA 4 · CARRY</b>: sin datos — las velas spot y perp de BingX no se pudieron alinear "
+                "(mira el log: 'spot y perp no coinciden')")
     dates = sorted({d for v in data.values() for d in v["px"]})
     ranked = [s for s in syms if s in data]
     variants = [(e, x, u) for e in (10, 20, 40) for x in (0, 5) for u in (15, len(ranked))]

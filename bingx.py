@@ -144,7 +144,7 @@ class BingX:
 
     def spot_klines(self, symbol, interval, limit=1000, end_time=None, start_time=None):
         p = {"symbol": symbol, "interval": interval, "limit": min(limit, 1000), "endTime": end_time,
-             "startTime": start_time, "timestamp": int(time.time() * 1000)}
+             "startTime": start_time, "timeZone": 0, "timestamp": int(time.time() * 1000)}
         try:
             d = self._req("GET", "/openApi/spot/v2/market/kline", p)
         except BingXError:
@@ -156,6 +156,9 @@ class BingX:
                              float(k["close"]), float(k.get("volume", 0))])
             else:
                 rows.append([int(k[0]), float(k[1]), float(k[2]), float(k[3]), float(k[4]), float(k[5])])
+        for r in rows:
+            if r[0] < 10**12:              # segundos → ms
+                r[0] *= 1000
         rows.sort(key=lambda r: r[0])
         return rows
 

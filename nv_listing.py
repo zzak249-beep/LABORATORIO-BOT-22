@@ -94,7 +94,10 @@ def research(bx, tg):
     btc_close = {b[0] + HOUR: b[4] for b in btc}
     cost = C.COST_PCT / 100
 
-    variants = [(d, h, s) for d in (24, 72) for h in (3, 7, 14) for s in ("pico", "none")]
+    if C._s("LST_GRID", "full").lower() == "confirm":     # prueba de confirmación fijada de antemano
+        variants = [(72, 7, "pct"), (72, 14, "pct")]
+    else:
+        variants = [(d, h, s) for d in (24, 72) for h in (3, 7, 14) for s in ("pico", "none")]
     thr = z_bonf(len(variants) * 2)
     lines = [f"🔬 <b>IDEA 1 · LISTING DECAY</b> · {len(data)} listados en {C.RESEARCH_DAYS} días ({time.time() - t0:.0f}s)",
              "corto a las X h del listado · mantener Y días · stop sobre el pico o sin stop",
@@ -107,7 +110,7 @@ def research(bx, tg):
         s1 = summarize(res, lambda x: x["t"] // (7 * DAY))
         hed = [dict(r, ret=r["ret_h"]) for r in res if "ret_h" in r]
         s2 = summarize(hed, lambda x: x["t"] // (7 * DAY))
-        name = f"{dly}h {hold:>2}d {stp:4s}"
+        name = f"{dly}h {hold:>2}d {stp if stp != 'pct' else f'+{C.LST_STOP_PCT:g}%':4s}"
         lines.append(fmt_row(name, s1, thr) + (f" · {skipped} sin entrar" if skipped else ""))
         lines.append(fmt_row(name + " +BTC", s2, thr))
         for s in (s1, s2):
