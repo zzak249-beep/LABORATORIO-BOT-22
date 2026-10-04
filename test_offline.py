@@ -11,8 +11,10 @@ os.environ["DATA_DIR"] = tempfile.mkdtemp()
 os.environ["TELEGRAM_TOKEN"] = ""
 os.environ["RESEARCH_DAYS"] = "200"
 import config as C  # noqa: E402
-from ideas import funding_clock, listing, weekend  # noqa: E402
-from ideas.common import DAY, HOUR, z_bonf  # noqa: E402
+import nv_funding as funding_clock
+import nv_listing as listing
+import nv_weekend as weekend  # noqa: E402
+from nv_common import DAY, HOUR, z_bonf  # noqa: E402
 from notify import Telegram  # noqa: E402
 from engine import Engine  # noqa: E402
 from universe import classify  # noqa: E402

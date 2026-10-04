@@ -18,7 +18,9 @@ log = logging.getLogger("main")
 
 from bingx import BingX, BingXError  # noqa: E402
 from engine import Engine  # noqa: E402
-from ideas import funding_clock, listing, weekend  # noqa: E402
+import nv_funding as funding_clock
+import nv_listing as listing
+import nv_weekend as weekend  # noqa: E402
 from notify import Telegram  # noqa: E402
 from universe import pretty  # noqa: E402
 

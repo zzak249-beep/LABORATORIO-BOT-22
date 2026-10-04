@@ -1,7 +1,7 @@
 """NOVA bot · configuración por variables de entorno (se quitan comillas: lección de Railway)."""
 import os
 
-CODE_VERSION = "nova-bot 1.0.0 (2026-10-04)"
+CODE_VERSION = "nova-bot 1.0.1 (2026-10-04)"
 
 
 def _raw(n, d):

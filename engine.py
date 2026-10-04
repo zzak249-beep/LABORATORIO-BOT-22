@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 import config as C
 from bingx import BingXError
-from ideas.common import tstat
+from nv_common import tstat
 from universe import pretty
 
 log = logging.getLogger("engine")

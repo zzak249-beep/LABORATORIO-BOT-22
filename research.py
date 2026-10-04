@@ -7,7 +7,9 @@ from datetime import datetime, timezone
 
 import config as C
 from bingx import BingX
-from ideas import funding_clock, listing, weekend
+import nv_funding as funding_clock
+import nv_listing as listing
+import nv_weekend as weekend
 from notify import Telegram
 
 log = logging.getLogger("research")
