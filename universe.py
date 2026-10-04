@@ -43,6 +43,7 @@ def is_tradfi(symbol):
 def pretty(symbol):
     """NCFXEUR2USD-USDT → EUR/USD (forex); BTC-USDT → BTC."""
     base = symbol.split("-")[0]
+    base = re.sub(r"^(NC[A-Z]{2})724", r"\1", base)  # 724 = cotiza 24/7
     m = re.match(r"^NC[A-Z]{2}(.+?)2(.+)$", base)
     if m:
         return f"{m.group(1)}/{m.group(2)}"

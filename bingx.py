@@ -119,6 +119,20 @@ class BingX:
         v = d.get("lastFundingRate")
         return None if v in (None, "") else float(v)
 
+    def premium_all(self):
+        """Funding estimado y próximo cobro de TODOS los símbolos en una llamada: {sym: (tasa, next_ms, mark)}."""
+        d = self._req("GET", "/openApi/swap/v2/quote/premiumIndex") or []
+        if isinstance(d, dict):
+            d = [d]
+        out = {}
+        for x in d:
+            try:
+                out[x["symbol"]] = (float(x.get("lastFundingRate") or 0), int(x.get("nextFundingTime") or 0),
+                                    float(x.get("markPrice") or 0))
+            except (KeyError, TypeError, ValueError):
+                pass
+        return out
+
     def funding_history(self, symbol, start_ms, end_ms=None):
         """Historial de funding [(t_ms, tasa por periodo)] entre start_ms y end_ms.
         Pagina hacia delante y hacia atrás: funciona tanto si la API devuelve los más antiguos como los más recientes."""
@@ -153,10 +167,11 @@ class BingX:
                 break
         return sorted(got.items())
 
-    def klines(self, symbol, interval, limit=1000, end_time=None):
+    def klines(self, symbol, interval, limit=1000, end_time=None, start_time=None):
         """Velas ordenadas de antigua a reciente: [t, o, h, l, c, v]. Incluye la vela en formación."""
         d = self._req("GET", "/openApi/swap/v3/quote/klines",
-                      {"symbol": symbol, "interval": interval, "limit": min(limit, 1440), "endTime": end_time})
+                      {"symbol": symbol, "interval": interval, "limit": min(limit, 1440), "endTime": end_time,
+                       "startTime": start_time})
         rows = []
         for k in d or []:
             if isinstance(k, dict):
@@ -239,7 +254,7 @@ class BingX:
         p = {
             "symbol": symbol, "side": "SELL" if side_long else "BUY", "positionSide": self._pos_side(side_long),
             "type": kind, "quantity": self.fmt_qty(symbol, qty), "stopPrice": self.fmt_px(symbol, stop_price),
-            "workingType": "MARK_PRICE", "clientOrderID": client_id or f"tsm{kind[:2]}{int(time.time() * 1000) % 10**10}",
+            "workingType": "MARK_PRICE", "clientOrderID": client_id or f"nva{kind[:2]}{int(time.time() * 1000) % 10**10}",
         }
         if not self.hedge_mode():
             p["reduceOnly"] = "true"
