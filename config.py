@@ -1,7 +1,7 @@
 """NOVA bot · configuración por variables de entorno (se quitan comillas: lección de Railway)."""
 import os
 
-CODE_VERSION = "nova-bot 1.0.1 (2026-10-04)"
+CODE_VERSION = "nova-bot 1.2.0 (2026-10-04)"
 
 
 def _raw(n, d):
@@ -50,7 +50,7 @@ TG_CHAT = _s("TELEGRAM_CHAT_ID", "")
 DATA_DIR = _s("DATA_DIR", "/data" if os.path.isdir("/data") else "./data")
 LOG_LEVEL = _s("LOG_LEVEL", "INFO")
 
-MODULES = _list("MODULES", "listing,funding,weekend")   # qué ideas corren en el bot
+MODULES = _list("MODULES", "carry,listing,funding,weekend")   # qué ideas corren en el bot
 
 # ── riesgo común ──
 RISK_PCT = _f("RISK_PCT", 0.5)                  # % del equity arriesgado por operación (hasta el stop)
@@ -87,8 +87,20 @@ WK_HOLD_H = _i("WK_HOLD_H", 24)
 WK_STOP_SIG = _f("WK_STOP_SIG", 2.5)            # stop en desviaciones típicas diarias
 WK_MAX_OPEN = _i("WK_MAX_OPEN", 4)
 
+# ── IDEA 4 · CARRY: comprar spot + corto en el perpetuo = sin riesgo de precio, se cobra el funding ──
+CR_CAPITAL = _f("CR_CAPITAL", 10000)            # capital (papel) dedicado al carry
+CR_SLOTS = _i("CR_SLOTS", 6)                    # posiciones de carry a la vez (capital repartido a partes iguales)
+CR_ENTRY_APR = _f("CR_ENTRY_APR", 20)           # funding anualizado mínimo (media 3 días) para entrar
+CR_EXIT_APR = _f("CR_EXIT_APR", 3)              # se sale si cae por debajo
+CR_LOOKBACK_D = _i("CR_LOOKBACK_D", 3)
+CR_PERP_LEV = _f("CR_PERP_LEV", 2)              # el corto lleva margen nocional/2 → capital por posición = 1.5 × nocional
+CR_MAX_BASIS = _f("CR_MAX_BASIS", 1.0)          # % máximo de prima perp/spot al entrar (no entrar en el pico)
+CR_REHEDGE = _f("CR_REHEDGE", 35)               # % de subida que obliga a rehacer el margen del corto (coste extra)
+CR_SPOT_FEE = _f("CR_SPOT_FEE", 0.12)           # % por lado en spot (0.10 comisión + deslizamiento)
+CR_UNIVERSE = _i("CR_UNIVERSE", 60)             # monedas con spot y perp, por volumen
+
 # ── investigación ──
-RESEARCH_MODULES = _list("RESEARCH_MODULES", "listing,funding,weekend")
+RESEARCH_MODULES = _list("RESEARCH_MODULES", "carry,listing,funding,weekend")
 RESEARCH_DAYS = _i("RESEARCH_DAYS", 365)
 RESEARCH_SYMBOLS = _i("RESEARCH_SYMBOLS", 80)   # para funding clock
 RESEARCH_HOLD = _b("RESEARCH_HOLD", True)

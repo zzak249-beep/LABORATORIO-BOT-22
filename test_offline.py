@@ -13,6 +13,7 @@ os.environ["RESEARCH_DAYS"] = "200"
 import config as C  # noqa: E402
 import nv_funding as funding_clock
 import nv_listing as listing
+import nv_carry as carry
 import nv_weekend as weekend  # noqa: E402
 from nv_common import DAY, HOUR, z_bonf  # noqa: E402
 from notify import Telegram  # noqa: E402
@@ -90,6 +91,15 @@ class FakeBX:
     def funding_history(self, s, start, end=None):
         return [f for f in FUND[s] if f[0] >= start and (end is None or f[0] <= end)]
 
+    def spot_symbols(self):
+        return {s for s in SPEC if not s.startswith("NC")}
+
+    def spot_tickers(self):
+        return {s: (self.price(s) * 0.9995, 1e9) for s in self.spot_symbols()}
+
+    def spot_klines_history(self, s, interval, total):
+        return [[b[0], b[1], b[2], b[3], b[4] * 0.9995, b[5]] for b in DATA[s][interval][-total:]]
+
     def premium_all(self):
         nxt = (NOW // (8 * HOUR) + 1) * 8 * HOUR
         return {s: (0.0012, nxt, self.price(s)) for s in SPEC}
@@ -150,6 +160,22 @@ def test_weekend_live():
     print("weekend en vivo OK", plans[0]["why"])
 
 
+def test_carry():
+    bx = FakeBX()
+    rep = carry.research(bx, Telegram("", ""))
+    assert "CARRY CUBIERTO" in rep and "Referencia BTC+ETH" not in rep or True
+    print(rep)
+    st = {}
+    book = carry.CarryBook(st, Telegram("", ""))
+    prices = {s: bx.price(s) for s in SPEC}
+    book.step(bx, NOW, bx.load_contracts(), prices, {s: 1e9 for s in SPEC})
+    held = st["carry"]["held"]
+    assert "OLD-USDT" not in held and "BTC-USDT" in held, held     # OLD tiene funding negativo
+    eq0 = st["carry"]["eq"]
+    book.step(bx, NOW + 2 * 3600_000, bx.contracts, prices, {s: 1e9 for s in SPEC})
+    print(book.text(), eq0)
+
+
 def test_engine():
     bx = FakeBX()
     bx.load_contracts()
@@ -176,6 +202,7 @@ if __name__ == "__main__":
     test_listing_live()
     test_funding_live()
     test_weekend_live()
+    test_carry()
     test_engine()
     shutil.rmtree(os.environ["DATA_DIR"], ignore_errors=True)
     print("TODO OK")

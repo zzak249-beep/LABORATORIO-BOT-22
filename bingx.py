@@ -119,6 +119,56 @@ class BingX:
         v = d.get("lastFundingRate")
         return None if v in (None, "") else float(v)
 
+    # ── spot (público) ──
+    def spot_symbols(self):
+        """Pares spot activos {SYM-USDT}."""
+        d = self._req("GET", "/openApi/spot/v1/common/symbols", {"timestamp": int(time.time() * 1000)}) or {}
+        rows = d.get("symbols", d) if isinstance(d, dict) else d
+        out = set()
+        for x in rows or []:
+            s = x.get("symbol", "")
+            if s.endswith("-USDT") and str(x.get("status", 1)) in ("1", "True", "true"):
+                out.add(s)
+        return out
+
+    def spot_tickers(self):
+        """{sym: (último precio, volumen USDT 24h)}."""
+        d = self._req("GET", "/openApi/spot/v1/ticker/24hr", {"timestamp": int(time.time() * 1000)}) or []
+        out = {}
+        for x in d:
+            try:
+                out[x["symbol"]] = (float(x["lastPrice"]), float(x.get("quoteVolume", 0) or 0))
+            except (KeyError, TypeError, ValueError):
+                pass
+        return out
+
+    def spot_klines(self, symbol, interval, limit=1000, end_time=None, start_time=None):
+        p = {"symbol": symbol, "interval": interval, "limit": min(limit, 1000), "endTime": end_time,
+             "startTime": start_time, "timestamp": int(time.time() * 1000)}
+        try:
+            d = self._req("GET", "/openApi/spot/v2/market/kline", p)
+        except BingXError:
+            d = self._req("GET", "/openApi/spot/v1/market/kline", p)
+        rows = []
+        for k in d or []:
+            if isinstance(k, dict):
+                rows.append([int(k.get("openTime", k.get("time"))), float(k["open"]), float(k["high"]), float(k["low"]),
+                             float(k["close"]), float(k.get("volume", 0))])
+            else:
+                rows.append([int(k[0]), float(k[1]), float(k[2]), float(k[3]), float(k[4]), float(k[5])])
+        rows.sort(key=lambda r: r[0])
+        return rows
+
+    def spot_klines_history(self, symbol, interval, total):
+        rows = self.spot_klines(symbol, interval, min(total, 1000))
+        while len(rows) < total and rows:
+            older = self.spot_klines(symbol, interval, min(total - len(rows), 1000), end_time=rows[0][0] - 1)
+            older = [r for r in older if r[0] < rows[0][0]]
+            if not older:
+                break
+            rows = older + rows
+        return rows[-total:]
+
     def premium_all(self):
         """Funding estimado y próximo cobro de TODOS los símbolos en una llamada: {sym: (tasa, next_ms, mark)}."""
         d = self._req("GET", "/openApi/swap/v2/quote/premiumIndex") or []

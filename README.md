@@ -1,11 +1,12 @@
-# NOVA bot · tres ideas que casi nadie opera
+# NOVA bot · cuatro ideas que casi nadie opera
 
-Ninguna sale de un patrón de velas. Las tres se apoyan en un **flujo forzado** de dinero que se puede prever.
+Ninguna sale de un patrón de velas. Las cuatro se apoyan en un **flujo forzado** de dinero que se puede prever.
 
 | Idea | Qué hace | Por qué podría funcionar |
 |---|---|---|
 | **1 · LISTING** | Abre corto en las monedas recién listadas a las 24 h del listado y lo mantiene 7 días. El stop va sobre el máximo desde el listado. Lo cubre con un largo de BTC del mismo tamaño | Los primeros días venden los airdrops, los fondos con tokens desbloqueados y los market makers, y casi no hay compradores naturales |
 | **2 · FUNDING** | Si el funding es extremo (≥0.05 %), entra 60 min antes del cobro en contra del lado que paga y sale pasado el cobro. Además cobra el funding | Quien paga un funding extremo cierra justo antes del cobro. Es un flujo con hora conocida de antemano |
+| **4 · CARRY** (la más sólida) | Compra spot y abre un corto del mismo tamaño en el perpetuo de las monedas con funding ≥20 %/año (media de 3 días). Sale cuando baja del 3 % | El precio se compensa entre las dos patas y cobras el funding. Es el negocio de Ethena, pero eligiendo solo las monedas que más pagan. Va **siempre en papel** (las órdenes spot y los traspasos aún no están automatizados) |
 | **3 · WEEKEND** | En los perpetuos TradFi 24/7 (oro, cobre, índices…): si el movimiento de viernes 21:00 a domingo 21:00 UTC supera 1σ, opera en contra durante 24 h | El fin de semana el mercado real está cerrado y el precio lo mueve solo flujo cripto escaso. Al reabrir CME o la bolsa, se corrige |
 
 ## Orden de uso

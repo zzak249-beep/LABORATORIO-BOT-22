@@ -10,10 +10,11 @@ from bingx import BingX
 import nv_funding as funding_clock
 import nv_listing as listing
 import nv_weekend as weekend
+import nv_carry as carry
 from notify import Telegram
 
 log = logging.getLogger("research")
-RUN = {"listing": listing.research, "funding": funding_clock.research, "weekend": weekend.research}
+RUN = {"carry": carry.research, "listing": listing.research, "funding": funding_clock.research, "weekend": weekend.research}
 
 
 def main():

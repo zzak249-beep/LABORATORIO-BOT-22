@@ -20,6 +20,7 @@ from bingx import BingX, BingXError  # noqa: E402
 from engine import Engine  # noqa: E402
 import nv_funding as funding_clock
 import nv_listing as listing
+import nv_carry as carry
 import nv_weekend as weekend  # noqa: E402
 from notify import Telegram  # noqa: E402
 from universe import pretty  # noqa: E402
@@ -31,7 +32,8 @@ class Bot:
         self.tg = Telegram(C.TG_TOKEN, C.TG_CHAT)
         self.eng = Engine(self.bx, self.tg)
         self.prices, self.vol = {}, {}
-        self.t_tick = self.t_fund = self.t_list = self.t_week = self.t_alive = 0
+        self.t_tick = self.t_fund = self.t_list = self.t_week = self.t_alive = self.t_carry = 0
+        self.carry = carry.CarryBook(self.eng.st, self.tg)
 
     def tickers(self):
         p, v = {}, {}
@@ -48,7 +50,8 @@ class Bot:
         for cmd in self.tg.poll():
             c = cmd.split()[0].split("@")[0].lower()
             if c in ("/estado", "/stats", "/status"):
-                self.tg.send(self.eng.stats_text() + f"\n{C.CODE_VERSION} · {C.summary()}"
+                self.tg.send(self.eng.stats_text() + ("\n" + self.carry.text() if "carry" in C.MODULES else "")
+                             + f"\n{C.CODE_VERSION} · {C.summary()}"
                              + ("\n⏸ PAUSADO" if self.eng.st["paused"] else ""))
             elif c == "/abiertas":
                 o = self.eng.st["open"]
@@ -86,6 +89,12 @@ class Bot:
                 self.eng.contracts = self.bx.load_contracts()
             plans += weekend.scan(self.bx, self.eng.st["ideas"], now, self.eng.contracts)
             self.t_week = t
+        if "carry" in C.MODULES and t - self.t_carry >= 600 and self.prices:
+            if not self.eng.contracts:
+                self.eng.contracts = self.bx.load_contracts()
+            self.carry.step(self.bx, now, self.eng.contracts, self.prices, self.vol)
+            self.eng.save()
+            self.t_carry = t
         for p in plans:
             self.eng.open(p, self.prices)
         if plans:
@@ -95,7 +104,7 @@ class Bot:
         if dt.hour == 20 and self.eng.st.get("last_report") != day:
             self.eng.st["last_report"] = day
             self.eng.save()
-            self.tg.send(self.eng.stats_text())
+            self.tg.send(self.eng.stats_text() + ("\n" + self.carry.text() if "carry" in C.MODULES else ""))
         if t - self.t_alive > 1800:
             log.info("vivo · %d abiertas · %d cerradas", len(self.eng.st["open"]), len(self.eng.st["closed"]))
             self.t_alive = t
@@ -104,6 +113,8 @@ class Bot:
         self.tg.send(f"🚀 {C.CODE_VERSION}\n{C.summary()}\n"
                      + ("⚠️ LIVE: órdenes REALES" if C.LIVE else "PAPEL: sin órdenes reales")
                      + ("\n(MODE=LIVE pero falta CONFIRM_LIVE=SI → sigue en papel)" if C.MODE == "LIVE" and not C.LIVE else "")
+                     + ("\nCARRY va siempre en papel (necesita órdenes spot + traspasos: aún no automatizado)"
+                        if "carry" in C.MODULES else "")
                      + "\nPrimera pasada: reviso la fecha de listado de todas las monedas (1–2 min).")
         if C.LIVE:
             try:
